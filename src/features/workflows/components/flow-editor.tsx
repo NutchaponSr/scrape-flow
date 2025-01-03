@@ -6,7 +6,8 @@ import {
   Controls,
   ReactFlow,
   useEdgesState,
-  useNodesState
+  useNodesState,
+  useReactFlow
 } from "@xyflow/react";
 import { useEffect } from "react";
 import { Workflow } from "@prisma/client";
@@ -25,12 +26,31 @@ interface FlowEditorProps {
 const nodeTypes = { FlowScrapeNode: NodeComponent }
 
 export const FlowEditor = ({ workflow }: FlowEditorProps) => {
+  const { setViewport } = useReactFlow();
+
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [nodes, setNodes, onNodesChange] = useNodesState([CreateFlowNode(TaskType.LAUNCH_BROWSER)]);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
 
-  useEffect(() => {
+  useEffect(() => { 
+    try { 
+      const flow = JSON.parse(workflow.definition);
 
-  }, []);
+      if (!flow) return;
+
+      setEdges(flow.edges || []);
+      setNodes(flow.nodes || []);
+
+      if (!flow.viewpoint) return;
+
+      const {
+        x = 0,
+        y = 0,
+        zoom = 1,
+      } = flow.viewpoint;
+
+      setViewport({ x, y, zoom });
+    } catch (error) {}
+  }, [workflow.definition, setEdges, setNodes, setViewport]); 
 
   return (
     <main className="h-full w-full">

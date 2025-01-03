@@ -5,6 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 
 import { WorkflowStatus } from "@/features/workflows/types";
+import { revalidatePath } from "next/cache";
 
 export const UpdateWorkflow = async ({
   id,
@@ -42,5 +43,7 @@ export const UpdateWorkflow = async ({
     data: {
       definition,
     },
-  })
+  });
+
+  revalidatePath("/workflows");
 }

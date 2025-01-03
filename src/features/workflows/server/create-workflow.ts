@@ -1,6 +1,7 @@
 "use server";
 
 import { Edge } from "@xyflow/react";
+import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/db";
@@ -11,6 +12,8 @@ import {
 } from "@/features/workflows/schemas/create";
 
 import { AppNode } from "@/features/node/types";
+import { TaskType } from "@/features/tasks/types";
+import { CreateFlowNode } from "@/features/tasks/utils";
 import { WorkflowStatus } from "@/features/workflows/types";
 
 export const CreateWorkflow = async (value: CreateWorkflowType) => {
@@ -35,7 +38,7 @@ export const CreateWorkflow = async (value: CreateWorkflowType) => {
   }
 
   // let's add the flow entry point
-  // initialFlow.nodes.push(CreateWorkflowNode(TaskType.LAUNCH_BROWSER))
+  initialFlow.nodes.push(CreateFlowNode(TaskType.LAUNCH_BROWSER))
 
   const workflow = await db.workflow.create({
     data: {
@@ -50,5 +53,5 @@ export const CreateWorkflow = async (value: CreateWorkflowType) => {
     throw new Error("Failed to create workflow");
   }
 
-  return workflow
+  redirect(`/workflows/editor/${workflow.id}`);
 }
