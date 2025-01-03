@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 
 import { Hint } from "@/components/hint";
 
+import { SaveButton } from "@/features/workflows/components/save-button";
+
 interface TopbarProps {
   title: string;
   subtitle?: string;
@@ -38,7 +40,7 @@ export const Topbar = ({
         </div>
       </div>
       <div className="flex gap-1 flex-1 justify-end">
-        {/* <SaveButton workflowId={workflowId} /> */}
+        <SaveButton workflowId={workflowId} />
       </div>
     </header>
   );

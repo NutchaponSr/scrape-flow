@@ -1,13 +1,53 @@
+"use client";
+
+import {
+  Background,
+  BackgroundVariant,
+  Controls,
+  ReactFlow,
+  useEdgesState,
+  useNodesState
+} from "@xyflow/react";
+import { useEffect } from "react";
 import { Workflow } from "@prisma/client";
+
+import { NodeComponent } from "@/features/node/components/node-component";
+
+import { TaskType } from "@/features/tasks/types";
+import { CreateFlowNode } from "@/features/tasks/utils";
+
+import "@xyflow/react/dist/style.css";
 
 interface FlowEditorProps {
   workflow: Workflow;
 }
 
+const nodeTypes = { FlowScrapeNode: NodeComponent }
+
 export const FlowEditor = ({ workflow }: FlowEditorProps) => {
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState([CreateFlowNode(TaskType.LAUNCH_BROWSER)]);
+
+  useEffect(() => {
+
+  }, []);
+
   return (
-    <div className="h-full w-full">
-      {JSON.stringify(workflow)}
-    </div>
+    <main className="h-full w-full">
+      <ReactFlow
+        fitView
+        snapToGrid
+        edges={edges}
+        nodes={nodes}
+        onEdgesChange={onEdgesChange}
+        onNodesChange={onNodesChange}
+        nodeTypes={nodeTypes}
+        snapGrid={[50, 50]}
+        fitViewOptions={{ padding: 1 }}
+      >
+        <Controls position="top-left" />
+        <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+      </ReactFlow>
+    </main>
   );
 }

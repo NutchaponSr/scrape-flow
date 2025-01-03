@@ -22,16 +22,16 @@ export const Sidebar = () => {
       <div className="p-2">
         TODO CREDITS
       </div>
-      <div className="flex flex-col p-2">
+      <div className="flex flex-col space-y-1.5 p-2">
         {routes.map((route) => (
           <Link
             key={route.href}
             href={route.href}
             className={buttonVariants({
               variant: activeRoute.href === route.href 
-                ? "outline" 
-                : "ghost",
-              className: "flex !justify-start"
+                ? "default" 
+                : "outline",
+              className: "!justify-start"
             })}
           >
             <route.icon size={20} />
