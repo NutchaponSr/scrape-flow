@@ -20,7 +20,7 @@ export const NodeOutput = ({
   nodeId,
 }: NodeOutputProps) => {
   return (
-    <div className="flex justify-end relative p-3 bg-secondary rounded-b-md">
+    <div className="flex justify-end relative p-3 bg-secondary rounded-b-sm">
       <p className="text-xs text-muted-foreground">
         {output.name}
       </p>
