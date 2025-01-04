@@ -1,3 +1,4 @@
+import { Dispatch, SetStateAction } from "react";
 import { LucideProps } from "lucide-react";
 
 import { AppNode } from "@/features/node/types";
@@ -23,8 +24,28 @@ export type WorkflowExecutionPlanPhase = {
   nodes: AppNode[];
 }
 
+export enum FlowToExecutionPlanValidationError {
+  "NO_ENTRY_POINT",
+  "INVALID_INPUT",
+}
+
 export type FlowToExecutionPlanType = {
   executionPlan?: WorkflowExecutionPlan;
+  error?: {
+    type: FlowToExecutionPlanValidationError;
+    invalidElements?: AppNodeMissingInputs[];
+  };
 }
 
 export type WorkflowExecutionPlan = WorkflowExecutionPlanPhase[];
+
+export type AppNodeMissingInputs = {
+  nodeId: string;
+  inputs: string[];
+}
+
+export type FlowValidationContextType = {
+  invalidInputs: AppNodeMissingInputs[];
+  setInvalidInputs: Dispatch<SetStateAction<AppNodeMissingInputs[]>>;
+  clearErrors: () => void;
+}
