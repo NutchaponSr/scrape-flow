@@ -1,6 +1,7 @@
 export enum TaskType {
   LAUNCH_BROWSER = "LAUNCH_BROWSER",
   PAGE_TO_HTML = "PAGE_TO_HTML",
+  EXTRACT_TEXT_FROM_ELEMENT = "EXTRACT_TEXT_FROM_ELEMENT",
 }
 
 export enum TaskParamType {
@@ -13,7 +14,7 @@ export interface TaskParam {
   type: TaskParamType;
   helperText?: string;
   required?: boolean;
-  hidleHandle?: boolean;
+  hideHandle?: boolean;
   value?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;

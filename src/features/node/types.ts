@@ -1,5 +1,5 @@
 import { Node } from "@xyflow/react";
-import { TaskParam, TaskType } from "@/features/tasks/types";
+import { TaskParam, TaskParamType, TaskType } from "@/features/tasks/types";
 
 export interface AppNodeData {
   type: TaskType;
@@ -15,5 +15,11 @@ export interface AppNode extends Node {
 export interface ParamProps {
   param: TaskParam;
   value: string;
+  disabled: boolean;
   updateNodeParamValue: (newValue: string) => void;
+}
+
+export const ColorForHandle: Record<TaskParamType, string> = {
+  BROWSER_INSTANCE: "!bg-sky-400",
+  STRING: "!bg-yellow-400",
 }
