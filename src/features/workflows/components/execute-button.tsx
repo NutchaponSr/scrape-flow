@@ -1,9 +1,11 @@
 "use client";
 
 import { PlayIcon } from "lucide-react";
+import { useReactFlow } from "@xyflow/react";
 
 import { Button } from "@/components/ui/button";
 
+import { useRunWorkflow } from "@/features/workflows/api/use-run-workflow";
 import { useExecutionPlan } from "@/features/workflows/hooks/use-execution-plan";
 
 interface ExecuteButtonProps {
@@ -13,13 +15,23 @@ interface ExecuteButtonProps {
 export const ExecuteButton = ({ workflowId }:  ExecuteButtonProps) => {
   const generate = useExecutionPlan();
 
+  const { toObject } = useReactFlow();
+  const { mutate, isPending } = useRunWorkflow();
+
   return (
     <Button
       variant="outline"
+      disabled={isPending}
       onClick={() => {
         const plan = generate();
-        console.log("---- Plan ----");
-        console.table(plan);
+        
+        // Client side validation
+        if (!plan) return;
+
+        mutate({
+          workflowId,
+          flowDefinition: JSON.stringify(toObject()),
+        });
       }}
     >
       <PlayIcon className="stroke-orange-400" />

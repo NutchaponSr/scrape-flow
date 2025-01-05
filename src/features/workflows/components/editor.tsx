@@ -5,7 +5,7 @@ import { ReactFlowProvider } from "@xyflow/react";
 
 import { FlowValidationProvider } from "@/components/providers/flow-validation-provider";
 
-import { Topbar } from "@/features/workflows/components/top-bar";
+import { TopBar } from "@/features/workflows/components/top-bar";
 import { TaskMenu } from "@/features/workflows/components/task-menu";
 import { FlowEditor } from "@/features/workflows/components/flow-editor";
 
@@ -19,7 +19,7 @@ export const Editor = ({ workflow }: EditorProps) => {
     <FlowValidationProvider>
       <ReactFlowProvider>
         <div className="flex flex-col h-full w-full overflow-hidden">
-          <Topbar 
+          <TopBar 
             title="Workflow editor" 
             subtitle={workflow.name}
             workflowId={workflow.id}

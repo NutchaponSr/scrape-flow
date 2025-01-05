@@ -14,12 +14,14 @@ interface TopbarProps {
   title: string;
   subtitle?: string;
   workflowId: string;
+  hideButtons?: boolean;
 }
 
-export const Topbar = ({ 
+export const TopBar = ({ 
   title, 
   subtitle,
-  workflowId
+  workflowId,
+  hideButtons,
 }: TopbarProps) => {
   const router = useRouter();
 
@@ -41,8 +43,12 @@ export const Topbar = ({
         </div>
       </div>
       <div className="flex gap-1 flex-1 justify-end">
-        <ExecuteButton workflowId={workflowId} />
-        <SaveButton workflowId={workflowId} />
+        {!hideButtons && (
+          <>
+            <ExecuteButton workflowId={workflowId} />
+            <SaveButton workflowId={workflowId} />
+          </>
+        )}
       </div>
     </header>
   );
