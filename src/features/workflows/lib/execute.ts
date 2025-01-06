@@ -1,9 +1,17 @@
 import "server-only";
 
-import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { ExecutionPhase } from "@prisma/client";
 
-import { ExecutionPhaseStatus, WorkflowExecutionStatus } from "@/features/workflows/types";
+import { db } from "@/lib/db";
+
+import { 
+  ExecutionPhaseStatus, 
+  WorkflowExecutionStatus 
+} from "@/features/workflows/types";
+import { AppNode } from "@/features/node/types";
+import { TaskRegistry } from "@/features/tasks/registry";
+import { ExecutorRegistry } from "@/features/executor/registry";
 
 export async function ExecutionWorkflow(executionId: string) {
   const execution = await db.workflowExecution.findUnique({
@@ -20,20 +28,35 @@ export async function ExecutionWorkflow(executionId: string) {
     throw new Error("Execution");
   }
 
-  const environment = {
-    phase: {
-      launchBrowser: {
-        inputs: {
-          websiteUrl: "www.google.com",
-        },
-        outputs: {
-          browser: "PuppetterInstance",
-        },
-      },
-    },
-  };
+  const environment = { phases: {} };
 
-  // Initial workflow execution
+  await initializeWorkflowExecution(executionId, execution.workflowId);
+  await initializePhaseStatuses(execution);
+  
+
+  const creditConsumed = 0;
+  let executionFailed = false;
+  for (const phase of execution.phases) {
+    // TODO: Consume credits
+    const phaseExecution = await executeWorkflowPhase(phase);
+
+    if (!phaseExecution.success) {
+      executionFailed = true;
+      break;
+    }
+  }
+
+  // Finalize execution
+  finalizeWorkflowExecution(executionId, execution.workflowId, executionFailed, creditConsumed);
+
+  // TODO: Clean up environment
+
+  revalidatePath("/workflows/runs");
+}
+async function initializeWorkflowExecution(
+  executionId: string,
+  workflowId: string,
+) {
   await db.workflowExecution.update({
     where: {
       id: executionId,
@@ -46,7 +69,7 @@ export async function ExecutionWorkflow(executionId: string) {
 
   await db.workflow.update({
     where: {
-      id: execution.workflowId,
+      id: workflowId,
     },
     data: {
       lastRunAt: new Date(),
@@ -54,26 +77,29 @@ export async function ExecutionWorkflow(executionId: string) {
       lastRunStatus: WorkflowExecutionStatus.RUNNING,
     }
   });
+}
 
-  // Initial phases status
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function initializePhaseStatuses(execution: any) {
   await db.executionPhase.updateMany({
     where: {
       id: {
-        in: execution.phases.map((phase) => phase.id)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        in: execution.phases.map((phase: any) => phase.id)
       },
     },
     data: {
       status: ExecutionPhaseStatus.PENDING,
     },
   });
+}
 
-  const creditConsumed = 0;
-  let executionFailed = false;
-  for (const phase of execution.phases) {
-    // TODO: Execute phase
-  }
-
-  // Finalize execution
+async function finalizeWorkflowExecution(
+  executionId: string,
+  workflowId: string,
+  executionFailed: boolean,
+  creditConsumed: number,
+) {
   const finalStatus = executionFailed
     ? WorkflowExecutionStatus.FAILED
     : WorkflowExecutionStatus.COMPLETED
@@ -84,26 +110,78 @@ export async function ExecutionWorkflow(executionId: string) {
     },
     data: {
       status: finalStatus,
-      completeAt: new Date(),
+      completedAt: new Date(),
       creditConsumed,
     },
   });
 
   await db.workflow.update({
-    where:  {
-      id: execution.workflowId,
+    where: {
+      id: workflowId,
       lastRunId: executionId,
     },
     data: {
       lastRunStatus: finalStatus,
     },
   }).catch((error) => {
-    // Ingore
-    // This means that we have triggered other runs for this workflow
-    // While an execution was running
+    console.log("🔴 Error", error);
+  });
+}
+
+async function executeWorkflowPhase(phase: ExecutionPhase) {
+  const startedAt = new Date();
+  const node = JSON.parse(phase.node) as AppNode;
+
+  // Update phase status
+  await db.executionPhase.update({
+    where: {
+      id: phase.id
+    },
+    data: {
+      status: ExecutionPhaseStatus.RUNNING,
+      startedAt,
+    },
   });
 
-  // TODO: Clean up environment
+  const creditsRequired = TaskRegistry[node.data.type].credits;
 
-  revalidatePath("/workflows/runs");
+  console.log("🪙 CREDITS", creditsRequired);
+
+  // TODO: Decrement user balance (with required credits)
+
+  const success = await executePhase(phase, node);
+
+  await finalizePhase(phase.id, success);
+  
+  return { success };
+}
+
+async function finalizePhase(
+  phaseId: string,
+  success: boolean,
+) {
+  const finalStatus = success
+    ? ExecutionPhaseStatus.COMPLETED
+    : ExecutionPhaseStatus.FAILED;
+
+  await db.executionPhase.update({
+    where: {
+      id: phaseId,
+    },
+    data: {
+      status: finalStatus,
+      completedAt: new Date(),
+    }
+  });
+}
+
+async function executePhase(
+  phase: ExecutionPhase,
+  node: AppNode,
+): Promise<boolean> {
+  const runFn = ExecutorRegistry[node.data.type];
+
+  if (!runFn) return false;
+
+  return await runFn();
 }

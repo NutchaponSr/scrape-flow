@@ -3,7 +3,6 @@
 import { toast } from "sonner";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Layers2Icon, Loader2Icon } from "lucide-react";
 
@@ -38,8 +37,6 @@ interface CreateWorkflowDialogProps {
 }
 
 export const CreateWorkflowDialog = ({ triggerText }: CreateWorkflowDialogProps) => {
-  const router = useRouter();
-
   const { 
     mutate,
     isPending,
@@ -55,12 +52,8 @@ export const CreateWorkflowDialog = ({ triggerText }: CreateWorkflowDialogProps)
 
   const onSubmit = useCallback((value: CreateWorkflow) => {
     toast.loading("Creating workflow...", { id: "create-workflow" });
-    mutate(value, {
-      onSuccess: (data) => {
-        router.push(`/workflows/editor/${data.id}`);
-      }
-    });
-  }, [mutate, router]);
+    mutate(value);
+  }, [mutate]);
 
   return (
     <Dialog>
