@@ -12,7 +12,7 @@ export async function PageToHtmlExecutor(
     
     return true;
   } catch (error) {
-    console.log("🔴 ERROR", error);
+    env.log.error(`🔴 Error: ${error}`);
     return false;
   }
 }

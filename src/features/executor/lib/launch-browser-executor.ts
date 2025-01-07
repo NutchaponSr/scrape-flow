@@ -13,17 +13,21 @@ export async function LaunchBrowserExecutor(
       headless: false, // For settings
     });
 
+    env.log.info("Browser started successfully");
+    
     env.setBrowser(browser);
 
     const page = await browser.newPage();
 
     await page.goto(websiteUrl);
     
-    env.setPage(page)
+    env.setPage(page);
+
+    env.log.info(`Opened page at: ${websiteUrl}`);
 
     return true;
   } catch (error) {
-    console.log("🔴 ERROR", error);
+    env.log.error(`🔴 Error: ${error}`);
     return false;
   }
 }

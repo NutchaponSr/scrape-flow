@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { db } from "@/lib/db";
 
-export const deleteWorkflow = async (id: string) => {
+export const DeleteWorkflow = async (id: string) => {
   const { userId } = await auth();
 
   if (!userId) {

@@ -1,10 +1,13 @@
-import "server-only";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"server-only";
 
+import { Edge } from "@xyflow/react";
 import { Browser, Page } from "puppeteer";
 import { revalidatePath } from "next/cache";
 import { ExecutionPhase } from "@prisma/client";
 
 import { db } from "@/lib/db";
+import { waitFor } from "@/lib/utils";
 
 import { 
   ExecutionPhaseStatus, 
@@ -15,10 +18,11 @@ import {
   ExecutionEnvironment 
 } from "@/features/executor/types";
 import { AppNode } from "@/features/node/types";
+import { LogCollector } from "@/features/log/types";
 import { TaskParamType } from "@/features/tasks/types";
 import { TaskRegistry } from "@/features/tasks/registry";
+import { createLogCollector } from "@/features/log/utils";
 import { ExecutorRegistry } from "@/features/executor/registry";
-import { Edge } from "@xyflow/react";
 
 export async function ExecutionWorkflow(executionId: string) {
   const execution = await db.workflowExecution.findUnique({
@@ -42,12 +46,13 @@ export async function ExecutionWorkflow(executionId: string) {
   await initializeWorkflowExecution(executionId, execution.workflowId);
   await initializePhaseStatuses(execution);
   
-
-  const creditConsumed = 0;
+  
+  let creditConsumed = 0;
   let executionFailed = false;
   for (const phase of execution.phases) {
-    // TODO: Consume credits
-    const phaseExecution = await executeWorkflowPhase(phase, env, edges);
+    const phaseExecution = await executeWorkflowPhase(phase, env, edges, execution.userId);
+
+    creditConsumed += phaseExecution.creditsConsumed;
 
     if (!phaseExecution.success) {
       executionFailed = true;
@@ -61,6 +66,7 @@ export async function ExecutionWorkflow(executionId: string) {
 
   revalidatePath("/workflows/runs");
 }
+
 async function initializeWorkflowExecution(
   executionId: string,
   workflowId: string,
@@ -83,16 +89,14 @@ async function initializeWorkflowExecution(
       lastRunAt: new Date(),
       lastRunId: executionId,
       lastRunStatus: WorkflowExecutionStatus.RUNNING,
-    }
+    },
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function initializePhaseStatuses(execution: any) {
   await db.executionPhase.updateMany({
     where: {
       id: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         in: execution.phases.map((phase: any) => phase.id)
       },
     },
@@ -140,8 +144,10 @@ async function executeWorkflowPhase(
   phase: ExecutionPhase,
   env: Environment,
   edges: Edge[],
+  userId: string,
 ) {
   const startedAt = new Date();
+  const log = createLogCollector();
   const node = JSON.parse(phase.node) as AppNode;
 
   setUpEnvironmentForPhase(node, env, edges);
@@ -160,22 +166,28 @@ async function executeWorkflowPhase(
 
   const creditsRequired = TaskRegistry[node.data.type].credits;
 
-  console.log("🪙 CREDITS", creditsRequired);
+  let success = await decrementCredits(userId, creditsRequired, log);
 
-  // TODO: Decrement user balance (with required credits)
+  const creditsConsumed = success ? creditsRequired : 0;
 
-  const success = await executePhase(phase, node, env);
+  if (success) {
+    // We can execute the phase if the credits are sufficient
+    success = await executePhase(phase, node, env, log);
+  }
+
   const outputs = env.phases[node.id].outputs;
 
-  await finalizePhase(phase.id, success, outputs);
+  await finalizePhase(phase.id, success, outputs, log, creditsConsumed);
   
-  return { success };
+  return { success, creditsConsumed };
 }
 
 async function finalizePhase(
   phaseId: string,
   success: boolean,
   outputs: Record<string, string>,
+  log: LogCollector,
+  creditsConsumed: number,
 ) {
   const finalStatus = success
     ? ExecutionPhaseStatus.COMPLETED
@@ -186,10 +198,20 @@ async function finalizePhase(
       id: phaseId,
     },
     data: {
+      creditsConsumed,
       status: finalStatus,
       completedAt: new Date(),
       outputs: JSON.stringify(outputs),
-    }
+      logs: {
+        createMany: {
+          data: log.getAll().map((log) => ({
+            message: log.message,
+            logLevel: log.level,
+            timestamp: log.timestamp,
+          })),
+        },
+      },
+    },
   });
 }
 
@@ -197,13 +219,16 @@ async function executePhase(
   phase: ExecutionPhase,
   node: AppNode,
   env: Environment,
+  log: LogCollector,
 ): Promise<boolean> {
+  waitFor(2000);
+
   const runFn = ExecutorRegistry[node.data.type];
 
   if (!runFn) return false;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const executionEnvironment: ExecutionEnvironment<any> = createExecutionEnvironment(node, env);
+  waitFor(3000);
+  const executionEnvironment: ExecutionEnvironment<any> = createExecutionEnvironment(node, env, log);
 
   return await runFn(executionEnvironment);
 }
@@ -244,9 +269,10 @@ function setUpEnvironmentForPhase(
 function createExecutionEnvironment(
   node: AppNode,
   env: Environment,
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  log: LogCollector,
 ): ExecutionEnvironment<any> {
   return {
+    log,
     getInput: (name: string) => env.phases[node.id].inputs[name], 
     getBrowser: () => env.browser,
     getPage: () => env.page,
@@ -261,5 +287,32 @@ async function cleanUpEnvironment(env: Environment) {
     await env.browser
       .close()
       .catch((error) => console.log("🔴 Cannot close browser, reason", error));
+  }
+}
+
+async function decrementCredits(
+  userId: string,
+  amount: number,
+  log: LogCollector,
+) {
+  try {
+    await db.userBalance.update({
+      where: {
+        userId,
+        credits: {
+          gte: amount,
+        },
+      },
+      data: { 
+        credits: {
+          decrement: amount,
+        }
+      },
+    });
+
+    return true;
+  } catch {
+    log.error("Insufficient balance");
+    return false;
   }
 }

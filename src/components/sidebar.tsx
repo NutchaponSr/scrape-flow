@@ -8,6 +8,8 @@ import { buttonVariants } from "@/components/ui/button";
 
 import { Logo } from "@/components/logo";
 
+import { UserAvailableCreditsBadge } from "@/features/billing/components/user-available-credits-badge";
+
 import { routes } from "@/constants/routes";
 
 export const Sidebar = () => {
@@ -20,7 +22,7 @@ export const Sidebar = () => {
         <Logo />
       </div>
       <div className="p-2">
-        TODO CREDITS
+        <UserAvailableCreditsBadge />
       </div>
       <div className="flex flex-col space-y-1.5 p-2">
         {routes.map((route) => (
