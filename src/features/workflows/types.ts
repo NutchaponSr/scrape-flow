@@ -4,6 +4,8 @@ import { Dispatch, SetStateAction } from "react";
 
 import { AppNode } from "@/features/node/types";
 import { TaskParam, TaskType } from "@/features/tasks/types";
+
+import { GetWorkflowExecutions } from "@/features/workflows/server/get-workflow-executions";
 import { GetWorkflowExecutionWithPhases } from "@/features/workflows/server/get-workflow-execution-with-phases";
 
 export enum WorkflowStatus {
@@ -74,3 +76,5 @@ export enum ExecutionPhaseStatus {
 export type ExecutionData = Awaited<ReturnType<typeof GetWorkflowExecutionWithPhases>>
 
 export type Phase = Pick<ExecutionPhase, "creditsConsumed">;
+
+export type InitialDataType = Awaited<ReturnType<typeof GetWorkflowExecutions>>;

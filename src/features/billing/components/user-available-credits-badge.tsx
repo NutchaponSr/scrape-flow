@@ -29,7 +29,7 @@ export const UserAvailableCreditsBadge = () => {
       <span className="font-semibold capitalize">
         {isLoading && <Loader2Icon className="size-4 animate-spin" />}
         {!isLoading && credits && <CountUpWrapper value={credits} />}
-        {!isLoading && !credits && "-"}
+        {!isLoading && credits === undefined && "-"}
       </span>
     </Link>
   );

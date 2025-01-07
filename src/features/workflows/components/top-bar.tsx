@@ -9,6 +9,7 @@ import { Hint } from "@/components/hint";
 
 import { SaveButton } from "@/features/workflows/components/save-button";
 import { ExecuteButton } from "@/features/workflows/components/execute-button";
+import { NavigationTabs } from "@/features/workflows/components/navigation-tabs";
 
 interface TopbarProps {
   title: string;
@@ -42,6 +43,7 @@ export const TopBar = ({
           )}
         </div>
       </div>
+      <NavigationTabs workflowId={workflowId} />
       <div className="flex gap-1 flex-1 justify-end">
         {!hideButtons && (
           <>
