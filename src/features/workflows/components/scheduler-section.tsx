@@ -28,7 +28,7 @@ export const SchedulerSection = ({
   return (
     <div className="flex items-center gap-2">
       <CornerDownRightIcon className="size-4 text-muted-foreground" />
-      <SchedulerDialog workflowId={workflowId} cronStr={cron} />
+      <SchedulerDialog props={{ workflowId, cron }} key={`${cron}-${workflowId}`} />
       <MoveRightIcon className="size-4 text-muted-foreground" />
       <Hint content="Credit consumption for full run">
         <div className="flex items-center gap-3">

@@ -168,3 +168,23 @@ export function calculatorWorkflowCost(nodes: AppNode[]) {
     return acc + TaskRegistry[node.data.type].credits;
   }, 0);
 }
+
+export function triggerWorkflow(workflowId: string) {
+  const triggerApiUrl = getAppUrl(`/api/workflows/execute?workflowId=${workflowId}`);
+
+  fetch(triggerApiUrl, {
+    headers: {
+      Authorization: `Bearer ${process.env.API_SECRET!}`
+    },
+    cache: "no-store",
+    // signal: AbortSignal.timeout(5000),
+  }).catch((error) => (
+    console.error("🔴 Error triggering workflow with id", workflowId, ":error", error.message)
+  ));
+}
+
+export function getAppUrl(path: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+  return `${appUrl}/${path}`
+}

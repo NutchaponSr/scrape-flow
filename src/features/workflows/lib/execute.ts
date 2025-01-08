@@ -24,7 +24,7 @@ import { TaskRegistry } from "@/features/tasks/registry";
 import { createLogCollector } from "@/features/log/utils";
 import { ExecutorRegistry } from "@/features/executor/registry";
 
-export async function ExecutionWorkflow(executionId: string) {
+export async function ExecuteWorkflow(executionId: string, nextRunAt?: Date) {
   const execution = await db.workflowExecution.findUnique({
     where: {
       id: executionId,
@@ -43,7 +43,7 @@ export async function ExecutionWorkflow(executionId: string) {
 
   const env: Environment = { phases: {} };
 
-  await initializeWorkflowExecution(executionId, execution.workflowId);
+  await initializeWorkflowExecution(executionId, execution.workflowId, nextRunAt);
   await initializePhaseStatuses(execution);
   
   
@@ -70,6 +70,7 @@ export async function ExecutionWorkflow(executionId: string) {
 async function initializeWorkflowExecution(
   executionId: string,
   workflowId: string,
+  nextRunAt?: Date,
 ) {
   await db.workflowExecution.update({
     where: {
@@ -89,6 +90,7 @@ async function initializeWorkflowExecution(
       lastRunAt: new Date(),
       lastRunId: executionId,
       lastRunStatus: WorkflowExecutionStatus.RUNNING,
+      ...(nextRunAt && { nextRunAt }),
     },
   });
 }

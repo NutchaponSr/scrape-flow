@@ -14,7 +14,7 @@ import {
 } from "@/features/workflows/types";
 import { TaskRegistry } from "@/features/tasks/registry";
 import { FlowToExecutionPlan } from "@/features/workflows/utils";
-import { ExecutionWorkflow } from "@/features/workflows/lib/execute";
+import { ExecuteWorkflow } from "@/features/workflows/lib/execute";
 
 export const RunWorkflow = async (form: {
   workflowId: string;
@@ -108,6 +108,6 @@ export const RunWorkflow = async (form: {
     throw new Error("Workflow execution not created");
   }
 
-  ExecutionWorkflow(execution.id);  
+  ExecuteWorkflow(execution.id);  
   redirect(`/workflows/runs/${workflowId}/${execution.id}`);
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import parser from "cron-parser";
 import cronstrue from "cronstrue";
 
 import { 
@@ -21,28 +22,39 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 import { CustomDialogHeader } from "@/components/custom-dialog-header";
 
 import { useUpdateWorkflowCron } from "@/features/workflows/api/use-update-workflow-cron";
+import { useRemoveWorkflowSchedule } from "@/features/workflows/api/use-remove-workflow-schedule";
 
 interface SchedulerDialogProps {
-  cronStr: string | null;
-  workflowId: string;
+  props: {
+    cron: string | null;
+    workflowId: string;
+  }
 }
 
 export const SchedulerDialog = ({ 
-  cronStr,
-  workflowId,
+  props,
 }: SchedulerDialogProps) => {
-  const { mutate, isPending } = useUpdateWorkflowCron();
+  const { 
+    mutate: updateWorkflowCron, 
+    isPending: isPendingUpdate,
+  } = useUpdateWorkflowCron();
+  const {
+    mutate: removeWorkflowSchedule,
+    isPending: isPendingRemove,
+  } = useRemoveWorkflowSchedule();
 
-  const [cron, setCron] = useState(cronStr || "");
+  const [cron, setCron] = useState(props.cron || "");
   const [validCron, setValidCron] = useState(false);
   const [readableCron, setReadableCron] = useState("");
 
   useEffect(() => {
     try {
+      parser.parseExpression(cron);
       const humanCronStr = cronstrue.toString(cron);
       setValidCron(true);
       setReadableCron(humanCronStr);
@@ -50,6 +62,9 @@ export const SchedulerDialog = ({
       setValidCron(false);
     }
   }, [cron]);
+
+  const workflowHasValidCron = props.cron && props.cron.length > 0;
+  const readableSavedCron = workflowHasValidCron && cronstrue.toString(props.cron!);
 
   return (
     <Dialog>  
@@ -59,16 +74,16 @@ export const SchedulerDialog = ({
           variant="link"
           className={cn(
             "text-sm p-0 h-auto text-orange-500",
-            validCron && "text-primary",
+            readableSavedCron && "text-primary",
           )}
         >
-          {validCron && (
+          {readableSavedCron && (
             <div className="flex items-center gap-2">
               <ClockIcon className="size-3" />
               {readableCron}
             </div>
           )}
-          {!validCron && (
+          {!readableSavedCron && (
             <div className="flex items-center gap-1">
               <TriangleAlertIcon className="size-3" /> Set schedule
             </div>
@@ -80,7 +95,7 @@ export const SchedulerDialog = ({
           title="Schedule workflow execution" 
           icon={CalendarIcon}
         />
-        <div className="p-6 space-y-4">
+        <div className="space-y-4">
           <p className="text-muted-foreground">
             Specify a cron expression to schedule periodic workflow execution.
           </p>
@@ -95,8 +110,26 @@ export const SchedulerDialog = ({
           )}>
             {validCron ? readableCron : "Not a valid cron expression"}
           </div>
+          {workflowHasValidCron && (
+            <DialogClose asChild>
+              <div>
+                <Button
+                  variant="outline"
+                  disabled={isPendingUpdate || isPendingRemove}
+                  className="w-full text-destructive border-destructive hover:text-destructive"
+                  onClick={() => {
+                    toast.loading("Removing schedule...", { id: "cron" });
+                    removeWorkflowSchedule(props.workflowId);
+                  }}
+                >
+                  Remove current schedule
+                </Button>
+                <Separator className="my-4" />
+              </div>
+            </DialogClose>
+          )}
         </div>
-        <DialogFooter className="px-6 gap-2">
+        <DialogFooter className="gap-2">
           <DialogClose asChild>
             <Button className="w-full" variant="secondary">
               Cancel
@@ -105,11 +138,11 @@ export const SchedulerDialog = ({
           <DialogClose asChild>
             <Button 
               className="w-full"
-              disabled={isPending}
+              disabled={isPendingUpdate || !validCron || isPendingRemove}
               onClick={() => {
                 toast.loading("Saving...", { id: "cron" });
-                mutate({
-                  id: workflowId,
+                updateWorkflowCron({
+                  id: props.workflowId,
                   cron,
                 })
               }}

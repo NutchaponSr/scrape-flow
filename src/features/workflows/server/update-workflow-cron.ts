@@ -3,6 +3,7 @@
 import parser from "cron-parser";
 
 import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 
 import { db } from "@/lib/db";
 
@@ -22,7 +23,7 @@ export const UpdateWorkflowCron = async ({
   try {
     const interval = parser.parseExpression(cron, { utc: true })
     
-    return await db.workflow.update({
+    await db.workflow.update({
       where: {
         id,
         userId,
@@ -36,4 +37,6 @@ export const UpdateWorkflowCron = async ({
     console.error("🔴 Invalid cron:", error);
     throw new Error("Invalid cron expression");
   }
+
+  revalidatePath("/workflows");
 }

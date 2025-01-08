@@ -20,6 +20,7 @@ import { buttonVariants } from "@/components/ui/button";
 
 import { RunButton } from "@/features/workflows/components/run-button";
 import { WorkflowAction } from "@/features/workflows/components/workflow-action";
+import { LastRunDetails } from "@/features/workflows/components/last-run-details";
 import { SchedulerSection } from "@/features/workflows/components/scheduler-section";
 
 import { WorkflowStatus } from "@/features/workflows/types";
@@ -88,6 +89,7 @@ export const WorkflowCard = ({ workflow }: WorkflowCardProps) => {
           />
         </div>
       </CardContent>
+      <LastRunDetails workflow={workflow} />
     </Card>
   );
 }
