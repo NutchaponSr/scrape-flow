@@ -8,6 +8,7 @@ import { FlowValidationProvider } from "@/components/providers/flow-validation-p
 import { TopBar } from "@/features/workflows/components/top-bar";
 import { TaskMenu } from "@/features/workflows/components/task-menu";
 import { FlowEditor } from "@/features/workflows/components/flow-editor";
+import { WorkflowStatus } from "../types";
 
 interface EditorProps {
   workflow: Workflow;
@@ -23,6 +24,7 @@ export const Editor = ({ workflow }: EditorProps) => {
             title="Workflow editor" 
             subtitle={workflow.name}
             workflowId={workflow.id}
+            isPublished={workflow.status === WorkflowStatus.PUBLISHED}
           />
           <section className="flex h-full overflow-auto">
             <TaskMenu />

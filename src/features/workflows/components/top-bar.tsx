@@ -9,20 +9,24 @@ import { Hint } from "@/components/hint";
 
 import { SaveButton } from "@/features/workflows/components/save-button";
 import { ExecuteButton } from "@/features/workflows/components/execute-button";
+import { PublishButton } from "@/features/workflows/components/publish-button";
 import { NavigationTabs } from "@/features/workflows/components/navigation-tabs";
+import { UnpublishButton } from "@/features/workflows/components/unpublish-button";
 
 interface TopbarProps {
   title: string;
   subtitle?: string;
   workflowId: string;
   hideButtons?: boolean;
+  isPublished?: boolean;
 }
 
 export const TopBar = ({ 
   title, 
   subtitle,
   workflowId,
-  hideButtons,
+  hideButtons = false,
+  isPublished = false,
 }: TopbarProps) => {
   const router = useRouter();
 
@@ -48,7 +52,15 @@ export const TopBar = ({
         {!hideButtons && (
           <>
             <ExecuteButton workflowId={workflowId} />
-            <SaveButton workflowId={workflowId} />
+            {isPublished && (
+              <UnpublishButton workflowId={workflowId} />
+            )}
+            {!isPublished && (
+              <>
+                <SaveButton workflowId={workflowId} />
+                <PublishButton workflowId={workflowId} />
+              </>
+            )}
           </>
         )}
       </div>

@@ -37,6 +37,8 @@ export const ExecutionTableWrapper = async ({ workflowId }: ExecutionTableWrappe
   }
 
   return (
-    <ExecutionTable workflowId={workflowId} initialData={executions} />
+    <div className="container w-full py-6">
+      <ExecutionTable workflowId={workflowId} initialData={executions} />
+    </div>
   );
 }

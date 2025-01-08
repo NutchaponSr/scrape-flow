@@ -18,7 +18,9 @@ import {
 } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 
+import { RunButton } from "@/features/workflows/components/run-button";
 import { WorkflowAction } from "@/features/workflows/components/workflow-action";
+import { SchedulerSection } from "@/features/workflows/components/scheduler-section";
 
 import { WorkflowStatus } from "@/features/workflows/types";
 
@@ -57,9 +59,16 @@ export const WorkflowCard = ({ workflow }: WorkflowCardProps) => {
                 </span>
               ) }
             </h3>
+            <SchedulerSection 
+              workflowId={workflow.id}
+              isDraft={isDraft} 
+              creditsCost={workflow.creditsCost} 
+              cron={workflow.cron}
+            />
           </div>
         </div>
         <div className="flex items-center space-x-2">
+          {!isDraft && <RunButton workflowId={workflow.id} />}
           <Link
             href={`/workflows/editor/${workflow.id}`}
             className={cn(

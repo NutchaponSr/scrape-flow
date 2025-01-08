@@ -162,3 +162,9 @@ export function getIncomers(
 
   return nodes.filter((node) => incomersIds.has(node.id));
 } 
+
+export function calculatorWorkflowCost(nodes: AppNode[]) {
+  return nodes.reduce((acc, node) => {
+    return acc + TaskRegistry[node.data.type].credits;
+  }, 0);
+}

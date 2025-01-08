@@ -7,8 +7,10 @@ import { db } from "@/lib/db";
 
 import { 
   ExecutionPhaseStatus, 
+  WorkflowExecutionPlan, 
   WorkflowExecutionStatus,
   WorkflowExecutionTrigger,
+  WorkflowStatus,
 } from "@/features/workflows/types";
 import { TaskRegistry } from "@/features/tasks/registry";
 import { FlowToExecutionPlan } from "@/features/workflows/utils";
@@ -16,7 +18,7 @@ import { ExecutionWorkflow } from "@/features/workflows/lib/execute";
 
 export const RunWorkflow = async (form: {
   workflowId: string;
-  flowDefinition: string;
+  flowDefinition?: string;
 }) => {
   const { userId } = await auth();
   
@@ -41,22 +43,36 @@ export const RunWorkflow = async (form: {
     throw new Error("Workflow not found");
   }
 
-  if (!flowDefinition) {
-    throw new Error("Flow definition is not defined");
-  }
+  let executionPlan: WorkflowExecutionPlan;
 
-  const flow = JSON.parse(flowDefinition);
-  const result = FlowToExecutionPlan(flow.nodes, flow.edges);
+  let workflowDefinition = flowDefinition;
 
-  if (result.error) {
-    throw new Error("No execution plan generated");
-  }
+  if (workflow.status === WorkflowStatus.PUBLISHED) {
+    if (!workflow.executionPlan) {
+      throw new Error("No Execution plan in published workflow");
+    }
 
+    executionPlan = JSON.parse(workflow.executionPlan);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    workflowDefinition = workflow.definition;
+  } else {
+    // Workflow is a draft
+    if (!flowDefinition) {
+      throw new Error("Flow definition is not defined");
+    }
+    
+    const flow = JSON.parse(flowDefinition);
+    const result = FlowToExecutionPlan(flow.nodes, flow.edges);
   
-  const executionPlan = result.executionPlan;
+    if (result.error) {
+      throw new Error("No execution plan generated");
+    }
   
-  if (!executionPlan) {
-    throw new Error("No execution plan generated");
+    if (!result.executionPlan) {
+      throw new Error("No execution plan generated");
+    }
+  
+    executionPlan = result.executionPlan;
   }
 
   const execution = await db.workflowExecution.create({
@@ -66,7 +82,7 @@ export const RunWorkflow = async (form: {
       status: WorkflowExecutionStatus.PENDING,
       startedAt: new Date(),
       trigger: WorkflowExecutionTrigger.MANUAL,
-      definition: flowDefinition,
+      definition: workflowDefinition,
       phases: {
         create: executionPlan.flatMap((phase) => {
           return phase.nodes.flatMap((node) => {

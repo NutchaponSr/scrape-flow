@@ -16,7 +16,7 @@ export const ExecuteButton = ({ workflowId }:  ExecuteButtonProps) => {
   const generate = useExecutionPlan();
 
   const { toObject } = useReactFlow();
-  const { mutate, isPending } = useRunWorkflow();
+  const { mutate, isPending } = useRunWorkflow(workflowId);
 
   return (
     <Button
