@@ -4,7 +4,9 @@ import { toast } from "sonner";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Layers2Icon, Loader2Icon } from "lucide-react";
+import { CopyIcon, Layers2Icon, Loader2Icon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 
 import {
   Dialog,
@@ -27,46 +29,48 @@ import { Textarea } from "@/components/ui/textarea";
 import { CustomDialogHeader } from "@/components/custom-dialog-header";
 
 import { 
-  CreateWorkflow, 
-  CreateWorkflowSchema 
-} from "@/features/workflows/schemas/create";
-import { useCreateWorkflow } from "@/features/workflows/api/use-create-workflow";
+  DuplicateWorkflow,
+  DuplicateWorkflowSchema
+} from "@/features/workflows/schemas/duplicate";
 
-interface CreateWorkflowDialogProps {
-  triggerText: string;
+import { useDuplicateWorkflow } from "@/features/workflows/api/use-duplicate-workflow";
+
+interface DuplicateWorkflowDialogProps {
+  workflowId: string;
 }
 
-export const CreateWorkflowDialog = ({ triggerText }: CreateWorkflowDialogProps) => {
-  const { 
-    mutate,
-    isPending,
-  } = useCreateWorkflow();
+export const DuplicateWorkflowDialog = ({ workflowId }: DuplicateWorkflowDialogProps) => {
+  const { mutate, isPending } = useDuplicateWorkflow();
 
-  const form = useForm<CreateWorkflow>({
-    resolver: zodResolver(CreateWorkflowSchema),
+  const form = useForm<DuplicateWorkflow>({
+    resolver: zodResolver(DuplicateWorkflowSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      workflowId,
     },
   });
 
-  const onSubmit = useCallback((value: CreateWorkflow) => {
-    toast.loading("Creating workflow...", { id: "create-workflow" });
+  const onSubmit = useCallback((value: DuplicateWorkflow) => {
+    toast.loading("Duplicating workflow...", { id: "duplicate-workflow" });
     mutate(value);
   }, [mutate]);
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>
-          {triggerText ?? "Create workflow"}
+        <Button
+          size="icon"
+          variant="ghost"
+          className={cn(
+            "ml-2 transition-opacity duration-200 opacity-0 group-hover/card:opacity-100"
+          )}
+        >
+          <CopyIcon className="size-4 text-muted-foreground" />
         </Button>
       </DialogTrigger>
       <DialogContent className="px-0">
         <CustomDialogHeader 
           icon={Layers2Icon}
-          title="Create workflow"
-          subTitle="Start building your workflow"
+          title="Duplicate workflow"
         />
         <div className="p-6">
           <Form {...form}>

@@ -18,6 +18,8 @@ export const Hint = ({
   content,
   side,
 }: HintProps) => {
+  if (!content) return children;
+
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
